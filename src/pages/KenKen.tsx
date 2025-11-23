@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { KenKenBoard } from '../components/KenKenBoard';
 import { VisualizationControls } from '../components/VisualizationControls';
 import { useVisualization } from '../hooks/useVisualization';
-import { kenKenSolvers, generateKenKenPuzzle, checkCage, getSmartOptions } from '../algorithms/kenken';
+import { kenKenSolvers, generateKenKenPuzzle, checkCage, getSmartOptions, validateKenKenCSP } from '../algorithms/kenken';
 import '../styles/KenKen.css';
 
 export const KenKenPage: React.FC = () => {
@@ -116,33 +116,7 @@ export const KenKenPage: React.FC = () => {
         setValidationMsg({ text: 'Success! Valid Solution.', type: 'success' });
     };
 
-    const checkProgress = () => {
-        if (!puzzle.solution) {
-            // Fallback to basic validation if no solution (e.g. hardcoded puzzles)
-            validateUserSolution();
-            return;
-        }
 
-        let errorCount = 0;
-        const newErrorCells: string[] = [];
-
-        for (const key in userAssignments) {
-            const [r, c] = key.split(',').map(Number);
-            if (userAssignments[key] !== puzzle.solution[r][c]) {
-                errorCount++;
-                newErrorCells.push(key);
-            }
-        }
-
-        if (errorCount === 0) {
-            setValidationMsg({ text: 'All placed numbers are correct so far!', type: 'success' });
-        } else {
-            setValidationMsg({ text: `Found ${errorCount} incorrect cells.`, type: 'error' });
-            // We could highlight them, but let's just show message for now or pass to state?
-            // The visualization state handles errorCells.
-        }
-        return newErrorCells;
-    };
 
     const smartOptions = useMemo(() => {
         if (!isUserMode || !selectedCell) return [];
@@ -320,8 +294,14 @@ export const KenKenPage: React.FC = () => {
                     )}
 
                     <div style={{ display: 'flex', gap: '1rem' }}>
-                        <button onClick={() => checkProgress()} style={{ background: '#f39c12', color: 'white' }}>
-                            Check Progress
+                        <button
+                            onClick={() => {
+                                const result = validateKenKenCSP(puzzle, userAssignments);
+                                setValidationMsg({ text: result.message, type: result.valid ? 'success' : 'error' });
+                            }}
+                            style={{ background: '#8e44ad', color: 'white' }}
+                        >
+                            CSP Check
                         </button>
                         <button onClick={validateUserSolution} style={{ background: '#27ae60', color: 'white' }}>
                             Validate Board

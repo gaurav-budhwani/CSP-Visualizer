@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { NQueensBoard } from '../components/NQueensBoard';
 import { VisualizationControls } from '../components/VisualizationControls';
 import { useVisualization } from '../hooks/useVisualization';
-import { nQueensSolvers } from '../algorithms/nqueens';
+import { nQueensSolvers, validateNQueensCSP } from '../algorithms/nqueens';
 import '../styles/NQueens.css';
 
 export const NQueensPage: React.FC = () => {
@@ -203,6 +203,15 @@ export const NQueensPage: React.FC = () => {
                 <div className="controls-container" style={{ padding: '1rem', background: '#f5f5f5', borderRadius: '8px', marginBottom: '1rem' }}>
                     <button onClick={validateUserSolution} style={{ background: '#27ae60', color: 'white' }}>
                         Validate Solution
+                    </button>
+                    <button
+                        onClick={() => {
+                            const result = validateNQueensCSP(n, userAssignments);
+                            setValidationMsg({ text: result.message, type: result.valid ? 'success' : 'error' });
+                        }}
+                        style={{ marginLeft: '1rem', background: '#f39c12', color: 'white' }}
+                    >
+                        CSP Check (Forward Checking)
                     </button>
                     <button onClick={() => { setUserAssignments({}); setValidationMsg(null); }} style={{ marginLeft: '1rem' }}>
                         Clear Board

@@ -672,3 +672,116 @@ export const kenKenSolvers = {
     forwardChecking: solveKenKenForwardChecking,
     arcConsistency: solveKenKenArcConsistency
 };
+
+export function validateKenKenCSP(puzzle: KenKenPuzzle, assignments: Record<string, number>): { valid: boolean, message: string, errorCells: string[] } {
+    const errorCells: string[] = [];
+    let valid = true;
+    let message = 'CSP Check Passed: Valid so far (Forward Checking OK).';
+
+    // 1. Check Row/Col Uniqueness (Direct Conflicts)
+    for (let r = 0; r < puzzle.n; r++) {
+        for (let c = 0; c < puzzle.n; c++) {
+            const val = assignments[`${r},${c}`];
+            if (val !== undefined) {
+                // Check row
+                for (let c2 = 0; c2 < puzzle.n; c2++) {
+                    if (c !== c2 && assignments[`${r},${c2}`] === val) {
+                        valid = false;
+                        message = `Invalid! Duplicate ${val} in Row ${r + 1}`;
+                        if (!errorCells.includes(`${r},${c}`)) errorCells.push(`${r},${c}`);
+                        if (!errorCells.includes(`${r},${c2}`)) errorCells.push(`${r},${c2}`);
+                    }
+                }
+                // Check col
+                for (let r2 = 0; r2 < puzzle.n; r2++) {
+                    if (r !== r2 && assignments[`${r2},${c}`] === val) {
+                        valid = false;
+                        message = `Invalid! Duplicate ${val} in Column ${c + 1}`;
+                        if (!errorCells.includes(`${r},${c}`)) errorCells.push(`${r},${c}`);
+                        if (!errorCells.includes(`${r2},${c}`)) errorCells.push(`${r2},${c}`);
+                    }
+                }
+            }
+        }
+    }
+
+    if (!valid) return { valid, message, errorCells };
+
+    // 2. Check Cage Constraints (only if fully filled)
+    for (const cage of puzzle.cages) {
+        const isCageFull = cage.cells.every(([cr, cc]) => assignments[`${cr},${cc}`] !== undefined);
+        if (isCageFull) {
+            if (!checkCage(cage, assignments)) {
+                valid = false;
+                message = `Invalid! Cage target ${cage.target} (${cage.operation}) not met`;
+                cage.cells.forEach(([cr, cc]) => {
+                    if (!errorCells.includes(`${cr},${cc}`)) errorCells.push(`${cr},${cc}`);
+                });
+            }
+        }
+    }
+
+    if (!valid) return { valid, message, errorCells };
+
+    // 3. Forward Checking: Check if any future cell has an empty domain
+    // Reconstruct domains
+    const domains: Record<string, number[]> = {};
+    for (let r = 0; r < puzzle.n; r++) {
+        for (let c = 0; c < puzzle.n; c++) {
+            domains[`${r},${c}`] = Array.from({ length: puzzle.n }, (_, i) => i + 1);
+        }
+    }
+
+    // Apply assignments to prune domains
+    for (let r = 0; r < puzzle.n; r++) {
+        for (let c = 0; c < puzzle.n; c++) {
+            const val = assignments[`${r},${c}`];
+            if (val !== undefined) {
+                // Prune row/col neighbors
+                for (let i = 0; i < puzzle.n; i++) {
+                    if (i !== c && assignments[`${r},${i}`] === undefined) {
+                        domains[`${r},${i}`] = domains[`${r},${i}`].filter(v => v !== val);
+                    }
+                    if (i !== r && assignments[`${i},${c}`] === undefined) {
+                        domains[`${i},${c}`] = domains[`${i},${c}`].filter(v => v !== val);
+                    }
+                }
+            }
+        }
+    }
+
+    // Check for empty domains
+    for (let r = 0; r < puzzle.n; r++) {
+        for (let c = 0; c < puzzle.n; c++) {
+            if (assignments[`${r},${c}`] === undefined) {
+                // Also check cage constraints for partial cages? 
+                // getSmartOptions logic does this. Let's reuse getSmartOptions logic implicitly or just rely on row/col for now?
+                // The prompt asked for CSP checking. FC usually implies checking constraints against future variables.
+                // Row/Col is the main one. Cage constraint check on partial assignment is harder but getSmartOptions does it.
+                // Let's check if domain is empty purely based on Row/Col first.
+
+                if (domains[`${r},${c}`].length === 0) {
+                    return {
+                        valid: false,
+                        message: `CSP Check Failed: Cell (${r}, ${c}) has no valid options remaining (Row/Col conflict)!`,
+                        errorCells: []
+                    };
+                }
+
+                // Optional: Check if any value in domain satisfies cage?
+                // That's what getSmartOptions does.
+                // Let's be thorough and check if getSmartOptions returns empty.
+                const smartOpts = getSmartOptions(puzzle, assignments, r, c);
+                if (smartOpts.length === 0) {
+                    return {
+                        valid: false,
+                        message: `CSP Check Failed: Cell (${r}, ${c}) has no valid options remaining (Cage constraint)!`,
+                        errorCells: []
+                    };
+                }
+            }
+        }
+    }
+
+    return { valid: true, message, errorCells: [] };
+}

@@ -312,3 +312,72 @@ export const nQueensSolvers = {
     forwardChecking: solveForwardChecking,
     arcConsistency: solveArcConsistency
 };
+
+export function validateNQueensCSP(n: number, assignments: Record<string, number>): { valid: boolean, message: string, errorCells: string[] } {
+    // 1. Check for direct conflicts (attacking queens)
+    const errorCells: string[] = [];
+    let directConflict = false;
+
+    for (let r1 = 0; r1 < n; r1++) {
+        const c1 = assignments[`Q${r1}`];
+        if (c1 === undefined) continue;
+
+        for (let r2 = r1 + 1; r2 < n; r2++) {
+            const c2 = assignments[`Q${r2}`];
+            if (c2 === undefined) continue;
+
+            if (c1 === c2 || Math.abs(c1 - c2) === Math.abs(r1 - r2)) {
+                directConflict = true;
+                if (!errorCells.includes(`${r1},${c1}`)) errorCells.push(`${r1},${c1}`);
+                if (!errorCells.includes(`${r2},${c2}`)) errorCells.push(`${r2},${c2}`);
+            }
+        }
+    }
+
+    if (directConflict) {
+        return { valid: false, message: 'Invalid! Queens are attacking each other.', errorCells };
+    }
+
+    // 2. Forward Checking: Check if any future variable has an empty domain
+    // We need to reconstruct domains based on current assignments
+    const domains: Record<string, number[]> = {};
+    for (let i = 0; i < n; i++) {
+        domains[`Q${i}`] = Array.from({ length: n }, (_, j) => j);
+    }
+
+    // Apply assignments to prune domains
+    for (let r = 0; r < n; r++) {
+        const c = assignments[`Q${r}`];
+        if (c !== undefined) {
+            // This variable is assigned, so its domain is just [c] (conceptually)
+            // But for FC, we prune OTHERS based on this.
+
+            for (let nextRow = 0; nextRow < n; nextRow++) {
+                if (nextRow === r) continue; // Skip self
+
+                // If nextRow is already assigned, we already checked conflicts above.
+                // If unassigned, we prune its domain.
+                if (assignments[`Q${nextRow}`] === undefined) {
+                    domains[`Q${nextRow}`] = domains[`Q${nextRow}`].filter(nextCol => {
+                        return nextCol !== c && Math.abs(nextCol - c) !== Math.abs(nextRow - r);
+                    });
+                }
+            }
+        }
+    }
+
+    // Check for empty domains in unassigned variables
+    for (let r = 0; r < n; r++) {
+        if (assignments[`Q${r}`] === undefined) {
+            if (domains[`Q${r}`].length === 0) {
+                return {
+                    valid: false,
+                    message: `CSP Check Failed: Row ${r} has no valid moves remaining!`,
+                    errorCells: [] // No specific cell to highlight for empty domain, maybe just show message
+                };
+            }
+        }
+    }
+
+    return { valid: true, message: 'CSP Check Passed: Valid so far (Forward Checking OK).', errorCells: [] };
+}
