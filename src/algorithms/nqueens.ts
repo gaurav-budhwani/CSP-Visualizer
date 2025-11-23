@@ -372,7 +372,7 @@ export function validateNQueensCSP(n: number, assignments: Record<string, number
             if (domains[`Q${r}`].length === 0) {
                 return {
                     valid: false,
-                    message: `CSP Check Failed: Row ${r} has no valid moves remaining!`,
+                    message: `CSP Check Failed: Row ${r + 1} has no valid moves remaining!`,
                     errorCells: [] // No specific cell to highlight for empty domain, maybe just show message
                 };
             }
@@ -380,4 +380,27 @@ export function validateNQueensCSP(n: number, assignments: Record<string, number
     }
 
     return { valid: true, message: 'CSP Check Passed: Valid so far (Forward Checking OK).', errorCells: [] };
+}
+
+export function getNQueensDomains(n: number, assignments: Record<string, number>): Record<string, number[]> {
+    const domains: Record<string, number[]> = {};
+    for (let i = 0; i < n; i++) {
+        domains[`Q${i}`] = Array.from({ length: n }, (_, j) => j);
+    }
+
+    // Apply assignments to prune domains
+    for (let r = 0; r < n; r++) {
+        const c = assignments[`Q${r}`];
+        if (c !== undefined) {
+            // Prune all other variables
+            for (let nextRow = 0; nextRow < n; nextRow++) {
+                if (nextRow === r) continue;
+
+                domains[`Q${nextRow}`] = domains[`Q${nextRow}`].filter(nextCol => {
+                    return nextCol !== c && Math.abs(nextCol - c) !== Math.abs(nextRow - r);
+                });
+            }
+        }
+    }
+    return domains;
 }
