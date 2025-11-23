@@ -1,0 +1,64 @@
+.kenken-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem;
+    font-family: 'Inter', sans-serif;
+}
+
+.kenken-board {
+    display: grid;
+    border: 4px solid #333;
+    margin: 2rem 0;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    background: white;
+}
+
+.kenken-cell {
+    width: 70px;
+    height: 70px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 2rem;
+    position: relative;
+    box-sizing: border-box;
+    border: 1px solid #ddd;
+    /* Light grid lines */
+    color: #333;
+}
+
+.kenken-cell.highlighted {
+    background-color: #ffd700 !important;
+}
+
+.kenken-cell.error {
+    background-color: #ff6b6b !important;
+}
+
+/* Cage Borders - Thick lines */
+.cage-top {
+    border-top: 3px solid #333;
+}
+
+.cage-bottom {
+    border-bottom: 3px solid #333;
+}
+
+.cage-left {
+    border-left: 3px solid #333;
+}
+
+.cage-right {
+    border-right: 3px solid #333;
+}
+
+.cage-label {
+    position: absolute;
+    top: 2px;
+    left: 4px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: #333;
+    pointer-events: none;
+}
