@@ -1,73 +1,73 @@
-# React + TypeScript + Vite
+# CSP Visualizer - FAI Project
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**Repository:** [https://github.com/Tapananshu17/FAI_Project](https://github.com/Tapananshu17/FAI_Project/tree/main)
 
-Currently, two official plugins are available:
+## Overview
+This project is an interactive **Constraint Satisfaction Problem (CSP) Visualizer** built with React and TypeScript. It demonstrates how AI algorithms solve complex constraint problems like **N-Queens** and **KenKen** puzzles.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+The application features a premium UI with real-time visualization of solver steps, allowing users to understand algorithms like Backtracking, Forward Checking, and Arc Consistency.
 
-## React Compiler
+## Features
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### ♛ N-Queens Solver
+- **Interactive Board**: Visualize the placement of queens on an N x N board.
+- **Adjustable Size**: Support for board sizes from **4x4 to 12x12**.
+- **Algorithms**:
+  - **Backtracking**: Standard depth-first search.
+  - **Forward Checking**: Prunes domains to detect failures early.
+  - **Arc Consistency (MAC)**: Uses AC-3 to maintain arc consistency during search.
+- **User Play Mode**:
+  - Manually place queens.
+  - **Validation**: Instant feedback on conflicts (row, column, diagonal).
 
-## Expanding the ESLint configuration
+### 🔢 KenKen Solver
+- **Puzzle Generator**: Dynamically generates valid KenKen puzzles from **4x4 to 10x10**.
+- **Algorithms**:
+  - **Backtracking**: Brute-force with constraint checking.
+  - **Forward Checking**: Prunes invalid options based on row/col constraints.
+  - **Arc Consistency**: Advanced propagation for efficient solving.
+- **User Play Mode**:
+  - **Smart Hints**: Click a cell to see mathematically valid options based on cage and board state.
+  - **Progress Check**: Validate your current moves against the solution without revealing the entire board.
+  - **Cage Validation**: Ensures math constraints (Sum, Subtract, Multiply, Divide) are met.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### 🎨 UI/UX
+- **Premium Home Page**: Dark theme with animated gradient background and glassmorphism effects.
+- **Visualization Controls**: Play, Pause, Step Forward, Reset, and Speed Control.
+- **Responsive Design**: Optimized for various screen sizes.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Technologies Used
+- **Frontend**: React, TypeScript, Vite
+- **Styling**: CSS3 (Variables, Flexbox, Grid, Animations)
+- **State Management**: React Hooks (useState, useMemo, useEffect)
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## How to Run
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/Tapananshu17/FAI_Project.git
+   cd FAI_Project
+   ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+2. **Install Dependencies**
+   ```bash
+   npm install
+   ```
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+3. **Run the Development Server**
+   ```bash
+   npm run dev
+   ```
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+4. **Open in Browser**
+   Navigate to `http://localhost:5173` (or the URL shown in your terminal).
+
+## Project Structure
+- `src/algorithms/`: Core CSP solver logic (nqueens.ts, kenken.ts).
+- `src/components/`: Reusable UI components (Board, Controls).
+- `src/pages/`: Main game pages (Home, NQueens, KenKen).
+- `src/hooks/`: Custom hooks for visualization state.
+- `src/styles/`: CSS files for styling.
+
+---
+*Developed for the Foundations of Artificial Intelligence (FAI) Project.*
