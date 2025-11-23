@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { KenKenBoard } from '../components/KenKenBoard';
 import { VisualizationControls } from '../components/VisualizationControls';
 import { useVisualization } from '../hooks/useVisualization';
-import { kenKenSolvers, generateKenKenPuzzle, checkCage } from '../algorithms/kenken';
+import { kenKenSolvers, generateKenKenPuzzle, checkCage, getSmartOptions } from '../algorithms/kenken';
 import '../styles/KenKen.css';
 
 export const KenKenPage: React.FC = () => {
@@ -113,16 +113,53 @@ export const KenKenPage: React.FC = () => {
         }
 
         setValidationMsg({ text: 'Success! Valid Solution.', type: 'success' });
+        setValidationMsg({ text: 'Success! Valid Solution.', type: 'success' });
     };
+
+    const checkProgress = () => {
+        if (!puzzle.solution) {
+            // Fallback to basic validation if no solution (e.g. hardcoded puzzles)
+            validateUserSolution();
+            return;
+        }
+
+        let errorCount = 0;
+        const newErrorCells: string[] = [];
+
+        for (const key in userAssignments) {
+            const [r, c] = key.split(',').map(Number);
+            if (userAssignments[key] !== puzzle.solution[r][c]) {
+                errorCount++;
+                newErrorCells.push(key);
+            }
+        }
+
+        if (errorCount === 0) {
+            setValidationMsg({ text: 'All placed numbers are correct so far!', type: 'success' });
+        } else {
+            setValidationMsg({ text: `Found ${errorCount} incorrect cells.`, type: 'error' });
+            // We could highlight them, but let's just show message for now or pass to state?
+            // The visualization state handles errorCells.
+        }
+        return newErrorCells;
+    };
+
+    const smartOptions = useMemo(() => {
+        if (!isUserMode || !selectedCell) return [];
+        const [r, c] = selectedCell.split(',').map(Number);
+        return getSmartOptions(puzzle, userAssignments, r, c);
+    }, [isUserMode, selectedCell, puzzle, userAssignments]);
 
     const displayState = useMemo(() => {
         if (isUserMode) {
+            // If we just checked progress, maybe we want to show errors?
+            // For now, let's just show basic state.
             return {
                 ...initialState,
                 assignments: userAssignments,
                 stepDescription: 'User Play Mode',
                 highlightedCells: selectedCell ? [selectedCell] : [],
-                errorCells: []
+                errorCells: [] // Could populate this if we want to show errors visually
             };
         }
         return currentState;
@@ -254,13 +291,46 @@ export const KenKenPage: React.FC = () => {
                 />
             ) : (
                 <div className="controls-container" style={{ padding: '1rem', background: '#f5f5f5', borderRadius: '8px', marginBottom: '1rem' }}>
-                    <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', color: '#666' }}>Click cell and type number (1-{puzzle.n})</p>
-                    <button onClick={validateUserSolution} style={{ background: '#27ae60', color: 'white' }}>
-                        Validate Solution
-                    </button>
-                    <button onClick={() => { setUserAssignments({}); setValidationMsg(null); }} style={{ marginLeft: '1rem' }}>
-                        Clear Board
-                    </button>
+                    <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', color: '#666' }}>
+                        Click cell to select. Type number or click option below.
+                    </p>
+
+                    {selectedCell && (
+                        <div style={{ marginBottom: '1rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                            <span style={{ fontSize: '0.9rem', fontWeight: 'bold', color: '#333' }}>Smart Options:</span>
+                            {smartOptions.map(num => (
+                                <button
+                                    key={num}
+                                    onClick={() => handleNumberInput(num)}
+                                    style={{
+                                        padding: '0.5rem 0.75rem',
+                                        background: '#3498db',
+                                        color: 'white',
+                                        border: 'none',
+                                        borderRadius: '4px',
+                                        cursor: 'pointer',
+                                        fontWeight: 'bold'
+                                    }}
+                                >
+                                    {num}
+                                </button>
+                            ))}
+                            {smartOptions.length === 0 && <span style={{ fontSize: '0.9rem', color: '#999' }}>None</span>}
+                        </div>
+                    )}
+
+                    <div style={{ display: 'flex', gap: '1rem' }}>
+                        <button onClick={() => checkProgress()} style={{ background: '#f39c12', color: 'white' }}>
+                            Check Progress
+                        </button>
+                        <button onClick={validateUserSolution} style={{ background: '#27ae60', color: 'white' }}>
+                            Validate Board
+                        </button>
+                        <button onClick={() => { setUserAssignments({}); setValidationMsg(null); }} style={{ background: '#e74c3c', color: 'white' }}>
+                            Clear Board
+                        </button>
+                    </div>
+
                     {validationMsg && (
                         <div style={{ marginTop: '0.5rem', color: validationMsg.type === 'success' ? '#27ae60' : '#c0392b', fontWeight: 'bold' }}>
                             {validationMsg.text}

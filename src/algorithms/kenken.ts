@@ -11,6 +11,7 @@ export interface Cage {
 export interface KenKenPuzzle {
     n: number;
     cages: Cage[];
+    solution?: number[][];
 }
 
 // Valid 4x4 Puzzle (Puzzle 1)
@@ -188,7 +189,118 @@ export function generateKenKenPuzzle(n: number): KenKenPuzzle {
         });
     }
 
-    return { n, cages };
+    return { n, cages, solution };
+}
+
+export function getSmartOptions(puzzle: KenKenPuzzle, assignments: Record<string, number>, row: number, col: number): number[] {
+    const n = puzzle.n;
+    const candidates = new Set<number>();
+
+    // 1. Initial candidates 1..N
+    for (let i = 1; i <= n; i++) candidates.add(i);
+
+    // 2. Filter by Row/Col (only against currently assigned cells)
+    for (let i = 0; i < n; i++) {
+        if (i !== col) {
+            const val = assignments[`${row},${i}`];
+            if (val !== undefined) candidates.delete(val);
+        }
+        if (i !== row) {
+            const val = assignments[`${i},${col}`];
+            if (val !== undefined) candidates.delete(val);
+        }
+    }
+
+    // 3. Filter by Cage Constraints
+    const cage = puzzle.cages.find(c => c.cells.some(([cr, cc]) => cr === row && cc === col));
+    if (!cage) return Array.from(candidates); // Should not happen
+
+    const validOptions: number[] = [];
+
+    // Get values already assigned in this cage (excluding current cell)
+    const currentCageValues: number[] = [];
+    let unassignedCount = 0;
+
+    for (const [cr, cc] of cage.cells) {
+        if (cr === row && cc === col) continue;
+        const val = assignments[`${cr},${cc}`];
+        if (val !== undefined) {
+            currentCageValues.push(val);
+        } else {
+            unassignedCount++;
+        }
+    }
+
+    // Helper to check if a set of values satisfies the cage
+    const checkValues = (vals: number[]) => {
+        if (cage.operation === '+') return vals.reduce((a, b) => a + b, 0) === cage.target;
+        if (cage.operation === '*') return vals.reduce((a, b) => a * b, 1) === cage.target;
+        if (cage.operation === '-') {
+            if (vals.length !== 2) return false;
+            return Math.abs(vals[0] - vals[1]) === cage.target;
+        }
+        if (cage.operation === '/') {
+            if (vals.length !== 2) return false;
+            const max = Math.max(vals[0], vals[1]);
+            const min = Math.min(vals[0], vals[1]);
+            return max / min === cage.target;
+        }
+        if (cage.operation === '=') return vals[0] === cage.target;
+        return false;
+    };
+
+    // For each candidate, check if it's possible to complete the cage
+    for (const val of candidates) {
+        if (unassignedCount === 0) {
+            // Cage is full with this value
+            if (checkValues([...currentCageValues, val])) {
+                validOptions.push(val);
+            }
+        } else {
+            // Cage is not full. Is there ANY combination of 'unassignedCount' numbers that satisfies the cage?
+            // We can brute force this since cages are small (max 4 cells usually, max unassigned is small)
+            // Optimization: For '-' and '/', max size is 2, so unassignedCount is always 1 here (since we are placing 1).
+            // For '+' and '*', we just need to find if target is reachable.
+
+            // Recursive search for completion
+            const canComplete = (currentSum: number, currentProd: number, count: number, currentVals: number[]): boolean => {
+                if (count === 0) {
+                    // Check logic based on operation
+                    if (cage.operation === '+') return currentSum === cage.target;
+                    if (cage.operation === '*') return currentProd === cage.target;
+                    if (cage.operation === '-') return Math.abs(currentVals[0] - currentVals[1]) === cage.target;
+                    if (cage.operation === '/') {
+                        const max = Math.max(currentVals[0], currentVals[1]);
+                        const min = Math.min(currentVals[0], currentVals[1]);
+                        return max / min === cage.target;
+                    }
+                    return false;
+                }
+
+                // Try adding numbers 1..N
+                // Note: We don't strictly enforce row/col uniqueness for the *future* cells here, 
+                // just mathematical possibility for the cage. Enforcing row/col for future cells is much harder (requires lookahead).
+                // But we should at least try numbers that are theoretically possible? 
+                // For simplicity and speed, let's just check math.
+                for (let nextVal = 1; nextVal <= n; nextVal++) {
+                    if (canComplete(currentSum + nextVal, currentProd * nextVal, count - 1, [...currentVals, nextVal])) {
+                        return true;
+                    }
+                }
+                return false;
+            };
+
+            // Initial values for recursion
+            let startSum = currentCageValues.reduce((a, b) => a + b, 0) + val;
+            let startProd = currentCageValues.reduce((a, b) => a * b, 1) * val;
+
+            if (canComplete(startSum, startProd, unassignedCount, [...currentCageValues, val])) {
+                validOptions.push(val);
+            }
+        }
+    }
+
+    return validOptions.sort((a, b) => a - b);
 }
 
 const createInitialState = (puzzle: KenKenPuzzle): CSPSolverState<number> => {
