@@ -1,7 +1,5 @@
 # CSP Visualizer - FAI Project
 
-**Repository:** [https://github.com/Tapananshu17/FAI_Project](https://github.com/Tapananshu17/FAI_Project/tree/main)
-
 ## Overview
 This project is an interactive **Constraint Satisfaction Problem (CSP) Visualizer** built with React and TypeScript. It demonstrates how AI algorithms solve complex constraint problems like **N-Queens** and **KenKen** puzzles.
 
